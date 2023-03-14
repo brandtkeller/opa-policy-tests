@@ -1,0 +1,21 @@
+# We define the keyword match as the placeholder of whether the input matches the policy or not 
+default match = false
+
+# We define a policy to determine what is a deployment with latest image tag
+latest {
+  # The input keyword is a placeholder for the json value we wish to test our policy with
+  input.kind == "Deployment"
+  output := split(input.spec.template.spec.containers[_].image, ":")
+  # latest image tag
+  output[1] == "latest"
+}
+latest {
+  input.kind == "Deployment"
+  output := split(input.spec.template.spec.containers[_].image, ":")
+  # No image tag
+  count(output) == 1
+}
+
+match {
+    latest
+}

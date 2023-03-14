@@ -1,0 +1,122 @@
+[
+    {
+        "apiVersion": "apps/v1",
+        "kind": "Deployment",
+        "metadata": {
+            
+            "creationTimestamp": "2021-12-09T08:59:27Z",
+            "generation": 1,
+            "name": "webapp",
+            "namespace": "prod",
+            "resourceVersion": "54800292",
+            "uid": "06d1ccc8-d400-4cfc-993b-0826a2fab73b"
+        },
+        "spec": {
+            "replicas": 1,
+            "template": {
+                "spec": {
+                    "containers": [
+                        {
+                            "env": [
+                                {
+                                "name": "AWS_REGION",
+                                "value": "us-east-1"
+                                }
+                            ],
+                            "image": "webapp:43d733",
+                            "imagePullPolicy": "Always",
+                            "name": "webapp",
+                            "ports": [
+                                {
+                                "containerPort": 80,
+                                "name": "http",
+                                "protocol": "TCP"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        }
+    },
+    {
+        "apiVersion": "apps/v1",
+        "kind": "Deployment",
+        "metadata": {
+            
+            "creationTimestamp": "2021-12-29T08:59:27Z",
+            "generation": 1,
+            "name": "webapp",
+            "namespace": "staging",
+            "resourceVersion": "585858",
+            "uid": "06d1ccc8-d400-4cfc-993b-dhfjdfhjhff"
+        },
+        "spec": {
+            "replicas": 1,
+            "template": {
+                "spec": {
+                    "containers": [
+                        {
+                            "env": [
+                                {
+                                "name": "AWS_REGION",
+                                "value": "us-east-2"
+                                }
+                            ],
+                            "image": "webapp:latest",
+                            "imagePullPolicy": "Always",
+                            "name": "webapp",
+                            "ports": [
+                                {
+                                "containerPort": 80,
+                                "name": "http",
+                                "protocol": "TCP"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        }
+    },
+    {
+        "apiVersion": "apps/v1",
+        "kind": "Deployment",
+        "metadata": {
+            
+            "creationTimestamp": "2021-12-09T08:59:27Z",
+            "generation": 1,
+            "name": "db",
+            "namespace": "prod",
+            "resourceVersion": "767767",
+            "uid": "06d1ccc8-d400-4cfc-993b-jdhf84r"
+        },
+        "spec": {
+            "replicas": 1,
+            "template": {
+                "spec": {
+                    "containers": [
+                        {
+                            "env": [
+                                {
+                                "name": "AWS_REGION",
+                                "value": "us-east-1"
+                                }
+                            ],
+                            "image": "db",
+                            "imagePullPolicy": "Always",
+                            "name": "webapp",
+                            "ports": [
+                                {
+                                "containerPort": 27017,
+                                "name": "mongo",
+                                "protocol": "TCP"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        }
+    }
+]
