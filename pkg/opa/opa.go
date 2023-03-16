@@ -23,8 +23,6 @@ func GetMatchedAssets(ctx context.Context, regoPolicy string, dataset []map[stri
 
 	for _, asset := range dataset {
 		wg.Add(1)
-		fmt.Printf("asset: %s\n", asset)
-		fmt.Println()
 		go func(asset map[string]interface{}) {
 			defer wg.Done()
 
@@ -55,7 +53,9 @@ func GetMatchedAssets(ctx context.Context, regoPolicy string, dataset []map[stri
 					}
 
 					if matched, ok := expressionMap["match"]; ok && matched.(bool) {
-						fmt.Printf("Asset matched policy: %s/%s\n", expression, asset)
+						fmt.Printf("Asset matched policy: %s/%s\n\n", expression, asset)
+					} else {
+						fmt.Printf("Asset no matched policy: %s/%s\n\n", expression, asset)
 					}
 				}
 			}
