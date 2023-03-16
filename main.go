@@ -6,8 +6,11 @@ import (
 	"fmt"
 	"io/ioutil"
 
+	"github.com/brandtkeller/opa-policy-test/pkg/k8s"
 	"github.com/brandtkeller/opa-policy-test/pkg/opa"
 	"gopkg.in/yaml.v2"
+	"k8s.io/client-go/dynamic"
+	ctrl "sigs.k8s.io/controller-runtime"
 )
 
 type customRegoPolicy struct {
@@ -21,20 +24,33 @@ type regoTargets struct {
 
 func main() {
 
-	// Read in dataset
-	dataset, _ := ioutil.ReadFile("./dataset/latest_tag.json")
-	var data []map[string]interface{}
-	err := json.Unmarshal(dataset, &data)
+	ctx := context.Background()
+	config := ctrl.GetConfigOrDie()
+	dynamic := dynamic.NewForConfigOrDie(config)
 
+	namespace := "default"
+	fmt.Println("Calling GetResourcesDynamically")
+	items, err := kube.GetResourcesDynamically(dynamic, ctx,
+		"", "v1", "pods", namespace)
 	if err != nil {
-		fmt.Println("error occurred")
+		fmt.Println(err)
 	}
 
-	//fmt.Printf("dataset: %s", data)
+	// Maybe silly? marshall to json and unmarshall to []map[string]interface{}
+	jsonData, err := json.Marshal(items)
+	if err != nil {
+		fmt.Println(err)
+	}
+	var data []map[string]interface{}
+	err = json.Unmarshal(jsonData, &data)
+
+	if err != nil {
+		fmt.Println(err)
+	}
 
 	// Read in policy
 	var poldata customRegoPolicy
-	yamlFile, err := ioutil.ReadFile("./policy/latest_tag.yaml")
+	yamlFile, err := ioutil.ReadFile("./policy/latest_tag_pod.yaml")
 	if err != nil {
 		fmt.Printf("yamlFile.Get err   #%v ", err)
 	}
@@ -45,6 +61,5 @@ func main() {
 
 	//fmt.Printf("policy data: %s", string(poldata.Targets[0].Rego))
 	// Call GetMatchedAssets()
-	ctx := context.TODO()
 	opa.GetMatchedAssets(ctx, string(poldata.Targets[0].Rego), data)
 }

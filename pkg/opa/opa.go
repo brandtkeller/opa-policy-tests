@@ -23,7 +23,7 @@ func GetMatchedAssets(ctx context.Context, regoPolicy string, dataset []map[stri
 
 	for _, asset := range dataset {
 		wg.Add(1)
-		fmt.Printf("asset: %s", asset)
+		fmt.Printf("asset: %s\n", asset)
 		fmt.Println()
 		go func(asset map[string]interface{}) {
 			defer wg.Done()
@@ -34,18 +34,13 @@ func GetMatchedAssets(ctx context.Context, regoPolicy string, dataset []map[stri
 				rego.Input(asset),
 			)
 
-			// resultset is empty - something wrong here
-
 			resultSet, err := regoCalc.Eval(ctx)
-			fmt.Printf("resultset: %s", resultSet)
 			fmt.Println()
 			if err != nil || resultSet == nil || len(resultSet) == 0 {
-				fmt.Println("calling wg.Done()")
 				wg.Done()
 			}
 
 			for _, result := range resultSet {
-				fmt.Printf("result: %v", result)
 				fmt.Println()
 				for _, expression := range result.Expressions {
 					expressionBytes, err := json.Marshal(expression.Value)
@@ -60,7 +55,7 @@ func GetMatchedAssets(ctx context.Context, regoPolicy string, dataset []map[stri
 					}
 
 					if matched, ok := expressionMap["match"]; ok && matched.(bool) {
-						fmt.Printf("Asset matched policy: %s", result)
+						fmt.Printf("Asset matched policy: %s/%s\n", expression, asset)
 					}
 				}
 			}
