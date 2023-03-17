@@ -5,10 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"strings"
 
-	"github.com/brandtkeller/opa-policy-test/pkg/k8s"
+	kube "github.com/brandtkeller/opa-policy-test/pkg/k8s"
 	"github.com/brandtkeller/opa-policy-test/pkg/opa"
 	"gopkg.in/yaml.v2"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/client-go/dynamic"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
@@ -19,9 +21,9 @@ type customRegoPolicy struct {
 
 type regoTargets struct {
 	Domain    string   `yaml:"domain"`
-	ApiGroup  string   `yaml:"apiGroups"`
+	ApiGroup  string   `yaml:"apiGroup"`
 	Kinds     []string `yaml:"kinds"`
-	Namespace string   `yaml:"namespaces"`
+	Namespace string   `yaml:"namespace"`
 	Rego      string   `yaml:"rego"`
 }
 
@@ -44,26 +46,41 @@ func main() {
 	config := ctrl.GetConfigOrDie()
 	dynamic := dynamic.NewForConfigOrDie(config)
 
+	var resources []unstructured.Unstructured
+	// for each target
 	for _, target := range poldata.Targets {
 
-		// for each target
+		// for each target kind
 		for _, kind := range target.Kinds {
 
 			// TODO: split apigroup into group and version
-			// TODO: create a slice of items per target to run validation against
+			fmt.Println(kind)
+			// check for group/version combo
+			var group, version string
+			if strings.Contains(target.ApiGroup, "/") {
+				split := strings.Split(target.ApiGroup, "/")
+				group = split[0]
+				version = split[1]
+			} else {
+				group = ""
+				version = target.ApiGroup
+			}
 
-			fmt.Println("Calling GetResourcesDynamically")
-			// TODO: make items be a slice we can append to for later use
+			// TODO - Better way to get proper lowercase + plural of a resource
+			// Pod and Pods and pod are not acceptable inputs
+			resource := strings.ToLower(kind) + "s"
+
 			items, err := kube.GetResourcesDynamically(dynamic, ctx,
-				"", "v1", kind, target.Namespace)
+				group, version, resource, target.Namespace)
 			if err != nil {
 				fmt.Println(err)
 			}
+			resources = append(resources, items...)
 		}
 	}
 
 	// Maybe silly? marshall to json and unmarshall to []map[string]interface{}
-	jsonData, err := json.Marshal(items)
+	jsonData, err := json.Marshal(resources)
 	if err != nil {
 		fmt.Println(err)
 	}
