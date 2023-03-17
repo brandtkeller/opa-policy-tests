@@ -54,3 +54,12 @@ https://play.openpolicyagent.org/
     - Syntax
         - Custom?
         - How do I select which resources to inspect or exclude?
+
+
+## Execution
+
+- Lock down namespaces and apigroups to a single entry for now
+- Per target (loop)
+    - per kind (loop)
+        - Call getresourcesdynamically()
+        - append each iteration to slice of items
