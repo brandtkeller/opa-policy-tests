@@ -19,6 +19,14 @@ If we're writing our policy to meet parity with what we have today - we need the
 - Write rego for processing container in pod - use rego playground
 - Ability to target static manifest
 
+## Open Questions
+- How do we process exclusions?
+    - does rego allow for this directly?
+- Can we make the pass/fail configurable?
+    - Let the user define threshold for pass or fail
+    - allows policy to be written from either checking for compliant or non-compliant
+    - One or the other might be exceptionally easier in some situations
+
 ## Testing
 - Create/connect to a cluster
 - Deploy the demo workloads

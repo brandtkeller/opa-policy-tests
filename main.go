@@ -40,7 +40,7 @@ func main() {
 		fmt.Printf("Unmarshal: %v", err)
 	}
 
-	fmt.Printf("policy data: %s\n", poldata)
+	// fmt.Printf("policy data: %s\n", poldata)
 
 	ctx := context.Background()
 	config := ctrl.GetConfigOrDie()
@@ -50,12 +50,14 @@ func main() {
 	// for each target
 	for _, target := range poldata.Targets {
 
+		// TODO - process exclusions?
+
 		// for each target kind
 		for _, kind := range target.Kinds {
 
 			// TODO: split apigroup into group and version
 			fmt.Println(kind)
-			// check for group/version combo
+			// check for group/version combo - there is only ever one `/` right?
 			var group, version string
 			if strings.Contains(target.ApiGroup, "/") {
 				split := strings.Split(target.ApiGroup, "/")
@@ -77,20 +79,26 @@ func main() {
 			}
 			resources = append(resources, items...)
 		}
+		// Maybe silly? marshall to json and unmarshall to []map[string]interface{}
+		jsonData, err := json.Marshal(resources)
+		if err != nil {
+			fmt.Println(err)
+		}
+		var data []map[string]interface{}
+		err = json.Unmarshal(jsonData, &data)
+
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		// Call GetMatchedAssets()
+		results, err := opa.GetMatchedAssets(ctx, string(poldata.Targets[0].Rego), data)
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		// Now let's do something with this
+		fmt.Println(results.Match)
 	}
 
-	// Maybe silly? marshall to json and unmarshall to []map[string]interface{}
-	jsonData, err := json.Marshal(resources)
-	if err != nil {
-		fmt.Println(err)
-	}
-	var data []map[string]interface{}
-	err = json.Unmarshal(jsonData, &data)
-
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	// Call GetMatchedAssets()
-	opa.GetMatchedAssets(ctx, string(poldata.Targets[0].Rego), data)
 }

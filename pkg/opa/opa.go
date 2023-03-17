@@ -7,18 +7,19 @@ import (
 	"log"
 	"sync"
 
+	"github.com/brandtkeller/opa-policy-test/internal"
 	"github.com/open-policy-agent/opa/ast"
 	"github.com/open-policy-agent/opa/rego"
 )
 
-func GetMatchedAssets(ctx context.Context, regoPolicy string, dataset []map[string]interface{}) (err error) {
+func GetMatchedAssets(ctx context.Context, regoPolicy string, dataset []map[string]interface{}) (matchResult types.Results, err error) {
 	var wg sync.WaitGroup
 	compiler, err := ast.CompileModules(map[string]string{
 		"match.rego": regoPolicy,
 	})
 	if err != nil {
 		log.Fatal(err)
-		return fmt.Errorf("failed to compile rego policy: %w", err)
+		return matchResult, fmt.Errorf("failed to compile rego policy: %w", err)
 	}
 
 	for _, asset := range dataset {
@@ -54,8 +55,10 @@ func GetMatchedAssets(ctx context.Context, regoPolicy string, dataset []map[stri
 
 					if matched, ok := expressionMap["match"]; ok && matched.(bool) {
 						fmt.Printf("Asset matched policy: %s/%s\n\n", expression, asset)
+						matchResult.Match += 1
 					} else {
 						fmt.Printf("Asset no matched policy: %s/%s\n\n", expression, asset)
+						matchResult.NonMatch += 1
 					}
 				}
 			}
@@ -64,5 +67,5 @@ func GetMatchedAssets(ctx context.Context, regoPolicy string, dataset []map[stri
 
 	wg.Wait()
 
-	return nil
+	return matchResult, nil
 }
