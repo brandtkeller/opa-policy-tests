@@ -3,6 +3,8 @@ targets:
     apiGroup: "v1"
     kinds: ["Pod"]
     namespace: ""
+    exclude:
+      - kube-system
     rego: |
       package match
       default match = false

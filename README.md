@@ -20,8 +20,6 @@ If we're writing our policy to meet parity with what we have today - we need the
 - Ability to target static manifest
 
 ## Open Questions
-- How do we process exclusions?
-    - does rego allow for this directly?
 - Can we make the pass/fail configurable?
     - Let the user define threshold for pass or fail
     - allows policy to be written from either checking for compliant or non-compliant

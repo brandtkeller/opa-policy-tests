@@ -24,6 +24,7 @@ type regoTargets struct {
 	ApiGroup  string   `yaml:"apiGroup"`
 	Kinds     []string `yaml:"kinds"`
 	Namespace string   `yaml:"namespace"`
+	Exclude   []string `yaml:"exclude"`
 	Rego      string   `yaml:"rego"`
 }
 
@@ -40,8 +41,6 @@ func main() {
 		fmt.Printf("Unmarshal: %v", err)
 	}
 
-	// fmt.Printf("policy data: %s\n", poldata)
-
 	ctx := context.Background()
 	config := ctrl.GetConfigOrDie()
 	dynamic := dynamic.NewForConfigOrDie(config)
@@ -55,7 +54,6 @@ func main() {
 		// for each target kind
 		for _, kind := range target.Kinds {
 
-			// TODO: split apigroup into group and version
 			fmt.Println(kind)
 			// check for group/version combo - there is only ever one `/` right?
 			var group, version string
@@ -91,8 +89,23 @@ func main() {
 			fmt.Println(err)
 		}
 
+		var includedData []map[string]interface{}
+		for _, value := range data {
+			resourceNamespace := value["metadata"].(map[string]interface{})["namespace"]
+
+			exclude := false
+			for _, exns := range target.Exclude {
+				if exns == resourceNamespace {
+					exclude = true
+				}
+			}
+			if !exclude {
+				includedData = append(includedData, value)
+			}
+		}
+
 		// Call GetMatchedAssets()
-		results, err := opa.GetMatchedAssets(ctx, string(poldata.Targets[0].Rego), data)
+		results, err := opa.GetMatchedAssets(ctx, string(poldata.Targets[0].Rego), includedData)
 		if err != nil {
 			fmt.Println(err)
 		}
