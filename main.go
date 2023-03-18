@@ -29,7 +29,7 @@ type regoTargets struct {
 }
 
 func main() {
-
+	ctx := context.Background()
 	// Read in policy
 	var poldata customRegoPolicy
 	yamlFile, err := ioutil.ReadFile("./policy/latest_tag_pod.yaml")
@@ -41,42 +41,20 @@ func main() {
 		fmt.Printf("Unmarshal: %v", err)
 	}
 
-	ctx := context.Background()
-	config := ctrl.GetConfigOrDie()
-	dynamic := dynamic.NewForConfigOrDie(config)
-
-	var resources []unstructured.Unstructured
 	// for each target
 	for _, target := range poldata.Targets {
-
-		// TODO - process exclusions?
-
-		// for each target kind
-		for _, kind := range target.Kinds {
-
-			fmt.Println(kind)
-			// check for group/version combo - there is only ever one `/` right?
-			var group, version string
-			if strings.Contains(target.ApiGroup, "/") {
-				split := strings.Split(target.ApiGroup, "/")
-				group = split[0]
-				version = split[1]
-			} else {
-				group = ""
-				version = target.ApiGroup
-			}
-
-			// TODO - Better way to get proper lowercase + plural of a resource
-			// Pod and Pods and pod are not acceptable inputs
-			resource := strings.ToLower(kind) + "s"
-
-			items, err := kube.GetResourcesDynamically(dynamic, ctx,
-				group, version, resource, target.Namespace)
+		var resources []unstructured.Unstructured
+		// TODO - Per target - process domain and execute query accordingly
+		switch domain := target.Domain; domain {
+		case "kubernetes":
+			resources, err = queryKube(ctx, target)
 			if err != nil {
 				fmt.Println(err)
 			}
-			resources = append(resources, items...)
+		default:
+			fmt.Printf("No domain connector available for %s", domain)
 		}
+
 		// Maybe silly? marshall to json and unmarshall to []map[string]interface{}
 		jsonData, err := json.Marshal(resources)
 		if err != nil {
@@ -114,4 +92,35 @@ func main() {
 		fmt.Println(results.Match)
 	}
 
+}
+
+func queryKube(ctx context.Context, target regoTargets) (resources []unstructured.Unstructured, err error) {
+
+	config := ctrl.GetConfigOrDie()
+	dynamic := dynamic.NewForConfigOrDie(config)
+
+	for _, kind := range target.Kinds {
+		// check for group/version combo - there is only ever one `/` right?
+		var group, version string
+		if strings.Contains(target.ApiGroup, "/") {
+			split := strings.Split(target.ApiGroup, "/")
+			group = split[0]
+			version = split[1]
+		} else {
+			group = ""
+			version = target.ApiGroup
+		}
+
+		// TODO - Better way to get proper lowercase + plural of a resource
+		// Pod and Pods and pod are not acceptable inputs
+		resource := strings.ToLower(kind) + "s"
+
+		items, err := kube.GetResourcesDynamically(dynamic, ctx,
+			group, version, resource, target.Namespace)
+		if err != nil {
+			fmt.Println(err)
+		}
+		resources = append(resources, items...)
+	}
+	return resources, nil
 }
